@@ -61,6 +61,9 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
     private var mScore: Int // ←追加する
     private var mHighScore: Int // ←追加する
     private var mPrefs: Preferences // ←追加する
+    val sound01 = Gdx.audio.newSound(Gdx.files.internal("data/kick-low1.mp3"))
+
+
 
 
     init {
@@ -98,6 +101,8 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         // ハイスコアをPreferencesから取得する
         mPrefs = Gdx.app.getPreferences("jp.techacademy.taro.kirameki.jumpactiongame") // ←追加する
         mHighScore = mPrefs.getInteger("HIGHSCORE", 0) // ←追加する
+
+
 
 
 
@@ -176,6 +181,7 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         val enemyTexture = Texture("enemy.png")
 
 
+
         // StepとStarをゴールの高さまで配置していく
         var y = 0f
 
@@ -200,6 +206,7 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
             enemy.setPosition(step.x + mRandom.nextFloat(), step.y + Enemy.ENEMY_HEIGHT + mRandom.nextFloat() * 3)
             mEnemys.add(enemy)
             }
+
 
 
 
@@ -307,9 +314,11 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
             }
 
             if (mPlayer.boundingRectangle.overlaps(enemy.boundingRectangle)) {
-                val sound = Gdx.audio.newSound(Gdx.files.internal("data/kick-low1.mp3"))
-                sound.play(1.0f);
+
+
+                sound01.play(1.0f)
                 mGameState = GAME_STATE_GAMEOVER
+
                 return
 
             }
