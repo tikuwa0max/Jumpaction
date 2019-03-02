@@ -13,6 +13,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import java.util.*
+import com.badlogic.gdx.audio.Sound
+
+
+
+
+
 
 class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
     companion object {
@@ -33,6 +39,8 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         val GRAVITY = -12
     }
 
+
+
     private val mBg: Sprite
     private val mCamera: OrthographicCamera
     private val mGuiCamera: OrthographicCamera
@@ -42,6 +50,7 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
     private var mRandom: Random
     private var mSteps: ArrayList<Step>
     private var mStars: ArrayList<Star>
+    private var mEnemys: ArrayList<Enemy>
     private lateinit var mUfo: Ufo
     private lateinit var mPlayer: Player
 
@@ -77,6 +86,7 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         mRandom = Random()
         mSteps = ArrayList<Step>()
         mStars = ArrayList<Star>()
+        mEnemys = ArrayList<Enemy>()
         mGameState = GAME_STATE_READY
         mTouchPoint = Vector3() // ←追加する
 
@@ -88,6 +98,8 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         // ハイスコアをPreferencesから取得する
         mPrefs = Gdx.app.getPreferences("jp.techacademy.taro.kirameki.jumpactiongame") // ←追加する
         mHighScore = mPrefs.getInteger("HIGHSCORE", 0) // ←追加する
+
+
 
         createStage()
     }
@@ -125,13 +137,16 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
             mStars[i].draw(mGame.batch)
         }
 
+        // enemys
+        for (i in 0 until mEnemys.size) {
+            mEnemys[i].draw(mGame.batch)
+        }
+
         // UFO
         mUfo.draw(mGame.batch)
 
         //Player
         mPlayer.draw(mGame.batch)
-
-        //
 
         mGame.batch.end()
 
@@ -160,12 +175,13 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
         val ufoTexture = Texture("ufo.png")
         val enemyTexture = Texture("enemy.png")
 
+
         // StepとStarをゴールの高さまで配置していく
         var y = 0f
 
         val maxJumpHeight = Player.PLAYER_JUMP_VELOCITY * Player.PLAYER_JUMP_VELOCITY / (2 * -GRAVITY)
         while (y < WORLD_HEIGHT - 5) {
-            val type = if(mRandom.nextFloat() > 0.8f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
+            val type = if (mRandom.nextFloat() > 0.8f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
             val x = mRandom.nextFloat() * (WORLD_WIDTH - Step.STEP_WIDTH)
 
             val step = Step(type, stepTexture, 0, 0, 144, 36)
@@ -177,6 +193,17 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
                 star.setPosition(step.x + mRandom.nextFloat(), step.y + Star.STAR_HEIGHT + mRandom.nextFloat() * 3)
                 mStars.add(star)
             }
+
+
+            if (mRandom.nextFloat() > 0.7f) {
+            val enemy = Enemy(enemyTexture, 0, 0, 400, 315)
+            enemy.setPosition(step.x + mRandom.nextFloat(), step.y + Enemy.ENEMY_HEIGHT + mRandom.nextFloat() * 3)
+            mEnemys.add(enemy)
+            }
+
+
+
+
 
             y += (maxJumpHeight - 0.5f)
             y -= mRandom.nextFloat() * (maxJumpHeight / 3)
@@ -228,6 +255,7 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
             mSteps[i].update(delta)
         }
 
+
         // Player
         if (mPlayer.y <= 0.5f) {
             mPlayer.hitStep()
@@ -269,6 +297,24 @@ class GameScreen(private val mGame: JumpActionGame) : ScreenAdapter() {
                 break
             }
         }
+
+        // Enemyとの当たり判定
+        for (i in 0 until mEnemys.size) {
+            val enemy = mEnemys[i]
+
+            if (enemy.mState == Enemy.ENEMY_NONE) {
+                continue
+            }
+
+            if (mPlayer.boundingRectangle.overlaps(enemy.boundingRectangle)) {
+                val sound = Gdx.audio.newSound(Gdx.files.internal("data/kick-low1.mp3"))
+                sound.play(1.0f);
+                mGameState = GAME_STATE_GAMEOVER
+                return
+
+            }
+        }
+
 
         // Stepとの当たり判定
         // 上昇中はStepとの当たり判定を確認しない
